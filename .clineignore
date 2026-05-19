@@ -1,0 +1,20 @@
+# ========================================
+# .clineignore - Exclude from Claude/Cline context
+# ========================================
+
+# Node.js dependencies (large, auto-generated)
+node_modules/
+
+# Archived/obsolete files
+_archive/
+
+# Unpacked template (if not moved to _archive)
+unpacked_template/
+
+# Python artifacts
+__pycache__/
+*.pyc
+
+# System files
+.DS_Store
+Thumbs.db
