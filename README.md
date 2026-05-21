@@ -140,7 +140,7 @@ middleware = F5GuardrailMiddleware(
 ## Development
 
 ```bash
-git clone https://github.com/f5/langchain-f5-aiguardrails.git
+git clone https://github.com/laurentboutet/langchain-f5-aiguardrails.git
 cd langchain-f5-aiguardrails
 pip install -e ".[dev]"
 pytest
