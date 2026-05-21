@@ -1,0 +1,151 @@
+# langchain-f5-aiguardrails
+
+LangChain agent middleware for **F5 AI Guardrails** — runtime security scanning of LLM prompts and responses.
+
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+## Overview
+
+This middleware integrates F5 AI Guardrails (powered by CalypsoAI) into LangChain agent workflows. It intercepts LLM calls at the middleware layer to:
+
+- **Scan prompts** before they reach the LLM — detect prompt injection, PII leakage, toxic content
+- **Scan responses** before they reach the user — detect data leakage, policy violations
+- **Enforce or monitor** — block unsafe content or log it for observability
+
+## Installation
+
+```bash
+pip install langchain-f5-aiguardrails
+```
+
+## Quick Start
+
+```python
+from langchain_f5_aiguardrails import F5GuardrailMiddleware
+
+middleware = F5GuardrailMiddleware(
+    api_key="your-f5-api-key",
+    base_url="https://us1.calypsoai.app",
+    mode="enforce",
+)
+
+# Use with LangChain agents
+from langchain.agents import create_agent
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[],
+    middleware=[middleware],
+)
+
+result = agent.invoke({"messages": [{"role": "user", "content": "Hello!"}]})
+```
+
+## How It Works
+
+```
+User message
+    |
+    v
++--------------------------------------------+
+|  before_model hook                         |
+|  -> F5GuardrailClient.scan(prompt)         |
+|  -> if blocked and mode="enforce": block   |
++--------------------------------------------+
+    |
+    v
+  LLM call (OpenAI, Anthropic, etc.)
+    |
+    v
++--------------------------------------------+
+|  after_model hook                          |
+|  -> F5GuardrailClient.scan(response)       |
+|  -> if blocked and mode="enforce": block   |
++--------------------------------------------+
+    |
+    v
+Agent response returned to user
+```
+
+## Configuration
+
+### Direct Configuration
+
+```python
+middleware = F5GuardrailMiddleware(
+    api_key="your-api-key",
+    base_url="https://us1.calypsoai.app",
+    mode="enforce",       # "enforce" | "monitor" | "off"
+    fail_open=True,       # allow on API errors
+    timeout=30,           # HTTP timeout in seconds
+    project="my-project", # optional project ID
+    verbose=False,        # detailed scanner results
+    on_violation=my_callback,  # violation callback
+    blocked_message="Content blocked by security policy.",
+)
+```
+
+### Environment Variables
+
+```bash
+export F5_GUARDRAIL_API_KEY=your-api-key
+export F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
+export F5_GUARDRAIL_MODE=enforce
+export F5_GUARDRAIL_FAIL_OPEN=true
+export F5_GUARDRAIL_TIMEOUT=30
+export F5_GUARDRAIL_PROJECT=my-project
+```
+
+```python
+middleware = F5GuardrailMiddleware.from_env()
+```
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `api_key` | `str` | required | F5 AI Guardrails API key |
+| `base_url` | `str` | `https://us1.calypsoai.app` | API base URL |
+| `mode` | `str` | `enforce` | `enforce`, `monitor`, or `off` |
+| `fail_open` | `bool` | `True` | Allow on API errors |
+| `timeout` | `int` | `30` | HTTP timeout (seconds) |
+| `project` | `str` | `None` | Default project ID |
+| `verbose` | `bool` | `False` | Verbose scanner results |
+| `on_violation` | `callable` | `None` | `(ScanResponse, ScanDirection) -> None` |
+| `blocked_message` | `str` | *(default)* | Message on blocked content |
+
+## Enforcement Modes
+
+| Mode | Behavior |
+|------|----------|
+| `enforce` | Block violations — agent returns blocked message |
+| `monitor` | Log violations and invoke callback; never blocks |
+| `off` | Skip scanning entirely |
+
+## Violation Callback
+
+```python
+from langchain_f5_aiguardrails import ScanResponse, ScanDirection
+
+def my_callback(response: ScanResponse, direction: ScanDirection) -> None:
+    print(f"Violation in {direction.value}: {response.outcome}")
+    # Send to metrics, alerting, audit log, etc.
+
+middleware = F5GuardrailMiddleware(
+    api_key="key", mode="monitor", on_violation=my_callback,
+)
+```
+
+## Development
+
+```bash
+git clone https://github.com/f5/langchain-f5-aiguardrails.git
+cd langchain-f5-aiguardrails
+pip install -e ".[dev]"
+pytest
+```
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.

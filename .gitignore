@@ -5,5 +5,14 @@ secret.yaml
 .env
 .env.*
 !.env.example
+.vscode
+.clineignore
 
-
+*.md
+!**/README.md
+!CONTRIBUTING.md
+!LICENSE
+!CHANGELOG.md
+!CODE_OF_CONDUCT.md
+!docs/*.md
+!implementation_plan.md
