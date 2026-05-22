@@ -1,6 +1,6 @@
 # Examples Guide — langchain-f5-aiguardrails
 
-This directory contains 6 runnable examples to help you test, validate, and understand the F5 AI Guardrails middleware for LangChain.
+This directory contains 8 runnable examples to help you test, validate, and understand the F5 AI Guardrails integration for LangChain.
 
 ---
 
@@ -68,6 +68,8 @@ export F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
 
 ## Examples Overview
 
+### Middleware Mode (Scan API)
+
 | # | File | What it tests | LLM Key Needed? |
 |---|------|---------------|:---:|
 | 01 | `01_basic_enforce.py` | Enforce mode — blocks unsafe content | No |
@@ -78,6 +80,15 @@ export F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
 | 06 | `06_manual_scan_test.py` | Direct API test (no LangChain) | No |
 
 > \*Examples 01 and 05 contain **commented-out** LangChain agent code that requires `OPENAI_API_KEY`. The default mode tests middleware hooks directly — no LLM key needed.
+
+### Inline Proxy Mode (Production — Agentic Fingerprints)
+
+| # | File | What it tests | LLM Key Needed? |
+|---|------|---------------|:---:|
+| 07 | `07_inline_openai.py` | `ChatF5OpenAI` + `F5SessionManager` — basic inline proxy with session tracking | **Yes** (via F5 provider) |
+| 08 | `08_agentic_tools.py` | Agentic tool-use loop — `create_agent` with tools via F5 proxy | **Yes** (via F5 provider) |
+
+> **Note:** Examples 07–08 require `F5_GUARDRAIL_PROVIDER_OPENAI` environment variable and route traffic through the F5 proxy. No direct OpenAI API key needed — the F5 provider handles LLM routing.
 
 ---
 
@@ -207,6 +218,69 @@ python examples/05_with_tools.py
 
 Tests middleware in a tools context — scanning tool-related prompts and responses containing sensitive data. Includes commented-out LangChain agent code you can uncomment when ready.
 
+#### Step 7 — Inline proxy with Agentic Fingerprints
+
+```bash
+python examples/07_inline_openai.py
+```
+
+Tests the production inline proxy mode using `ChatF5OpenAI` and `F5SessionManager`. This routes all LLM traffic through the F5 proxy, enabling:
+- **Inline scanning** — prompts/responses scanned in one HTTP hop
+- **Agentic Fingerprints** — all calls with the same session ID appear in one CalypsoAI swimlane
+
+**Additional setup required:**
+
+```bash
+# Add to your .env file
+F5_GUARDRAIL_PROVIDER_OPENAI=your-f5-openai-provider-name
+```
+
+**Expected output:**
+```
+Session ID: example-workflow-550e8400-e29b-41d4-a716-446655440000
+
+--- Single invoke ---
+Response: The capital of France is Paris.
+
+--- Multi-turn ---
+AI: Nice to meet you, Laurent!
+AI: Your name is Laurent.
+
+All calls used session: example-workflow-550e8400-e29b-...
+Check CalypsoAI dashboard for the unified agent fingerprint view.
+```
+
+#### Step 8 — Agentic tool-use loop via F5 proxy
+
+```bash
+python examples/08_agentic_tools.py
+```
+
+Full agentic workflow using `create_agent` with two tools (`get_current_time`, `calculate`). The agent autonomously decides when to call tools — all LLM traffic (prompt, tool calls, final response) routed through F5 proxy with session tracking.
+
+You can also pass a custom question:
+
+```bash
+python examples/08_agentic_tools.py "What is 2^10 and what time is it?"
+```
+
+**Expected output:**
+```
+Session  : agentic-demo-550e8400-e29b-41d4-...
+Question : What is the current UTC time, and what is (128 * 7) + 42?
+
+🤖 Agent is thinking...
+
+  🔧 Tool call: get_current_time({})
+  📦 get_current_time → {"utc_time": "2025-05-22T12:30:45.123456+00:00"}
+  🔧 Tool call: calculate({"expression": "(128 * 7) + 42"})
+  📦 calculate → {"expression": "(128 * 7) + 42", "result": 938}
+  💬 Agent: The current UTC time is 12:30:45 and (128 × 7) + 42 = 938.
+
+✅ Final answer: The current UTC time is ...
+Session ID: agentic-demo-550e8400-e29b-...
+```
+
 ---
 
 ## Using with a Real LangChain Agent
@@ -282,4 +356,14 @@ from langchain_f5_aiguardrails import F5GuardrailMiddleware
 
 middleware = F5GuardrailMiddleware.from_env()
 # Pass to: create_agent(model=..., tools=..., middleware=[middleware])
+```
+
+```python
+# Inline proxy usage — route LLM traffic through F5 with session tracking
+from langchain_f5_aiguardrails import ChatF5OpenAI, F5SessionManager
+
+session = F5SessionManager(prefix="my-workflow")
+llm = ChatF5OpenAI.from_env(session_manager=session, model="gpt-4o-mini")
+response = llm.invoke("Hello!")
+print(response.content)
 ```

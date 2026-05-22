@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-05-21
+
+### Added
+- **Inline proxy mode** — New `ChatF5OpenAI` class that routes LLM traffic through the F5 AI Guardrails proxy (`/openai/{provider}/chat/completions`) instead of making separate scan API calls. This enables:
+  - **Agentic Fingerprints** — CalypsoAI swimlane view of all agent calls in a workflow
+  - **Session tracking** via `x-cai-metadata-session-id` header
+  - Inline scanning of both prompts and responses in a single HTTP hop
+  - Full compatibility with tool calls and multi-turn conversations
+- **`F5SessionManager`** — Lightweight session ID manager for the `x-cai-metadata-session-id` header. Auto-generates UUID-based session IDs with a configurable prefix, or accepts user-provided IDs. Multiple agents sharing the same session manager appear in a single CalypsoAI swimlane.
+- **`ChatF5OpenAI`** — Drop-in replacement for `ChatOpenAI` that automatically configures `base_url` to point to the F5 proxy and injects session headers on every request. Supports `from_env()` factory for environment-variable-based configuration.
+- New environment variables for inline proxy mode:
+  - `F5_GUARDRAIL_PROVIDER_OPENAI` — F5 provider name for OpenAI-compatible models
+- New optional dependency group `[openai]` for `langchain-openai>=0.3`
+- 26 new tests (10 for `F5SessionManager`, 16 for `ChatF5OpenAI`) — total now 94/94 passing
+- Example script `examples/07_inline_openai.py`
+
+### Changed
+- Updated package description to reflect both middleware and inline proxy modes
+- `langchain-openai` added to `[dev]` dependencies for testing
+
 ## [0.2.0] - 2025-05-20
 
 ### Fixed

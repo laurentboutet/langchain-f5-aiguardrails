@@ -70,7 +70,7 @@ def main() -> None:
             return f"Error: {e}"
     
     agent = create_agent(
-        model="openai:gpt-4o",
+        model="openai:gpt-5-mini",
         tools=[get_weather, calculate],
         middleware=[middleware],  # F5 guardrail protects all interactions
     )

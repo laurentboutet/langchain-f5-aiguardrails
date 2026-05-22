@@ -33,12 +33,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+openai = [
+    "langchain-openai>=0.3",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
     "respx>=0.22",
     "ruff>=0.8",
     "mypy>=1.13",
+    "langchain-openai>=0.3",
 ]
 examples = [
     "langchain-openai>=0.3",
