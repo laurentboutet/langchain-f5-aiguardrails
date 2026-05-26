@@ -121,7 +121,7 @@ The inline proxy mode routes LLM traffic through the F5 AI Guardrails (CalypsoAI
 - [x] **Environment variable resolution**
   | Parameter | Env var | Default |
   |-----------|---------|---------|
-  | `f5_api_key` | `F5_GUARDRAIL_API_KEY` | *(required)* |
+  | `f5_api_key` | `F5_GUARDRAIL_API_KEY_INLINE` | *(required)* |
   | `f5_base_url` | `F5_GUARDRAIL_BASE_URL` | `https://us1.calypsoai.app` |
   | `f5_provider` | `F5_GUARDRAIL_PROVIDER_OPENAI` | *(required)* |
 
@@ -333,7 +333,7 @@ llm = ChatF5OpenAI.from_env(session_manager=session, model="gpt-4o-mini")
 
 # Method 2: explicit parameters
 llm = ChatF5OpenAI(
-    f5_api_key="cai_xxxx",
+    f5_api_key="cai_xxxx",  # or set F5_GUARDRAIL_API_KEY_INLINE env var
     f5_base_url="https://us1.calypsoai.app",
     f5_provider="my-openai-provider",
     session_manager=session,
@@ -373,7 +373,9 @@ validator = ChatF5OpenAI.from_env(session_manager=session, model="gpt-4o-mini")
 
 | Variable | Mode | Required | Default | Description |
 |----------|------|:--------:|---------|-------------|
-| `F5_GUARDRAIL_API_KEY` | Both | ✅ | — | CalypsoAI API key |
+| `F5_GUARDRAIL_API_KEY_REQUEST` | Middleware | ✅ | — | CalypsoAI API key for request scanning |
+| `F5_GUARDRAIL_API_KEY_RESPONSE` | Middleware | ✅ | — | CalypsoAI API key for response scanning |
+| `F5_GUARDRAIL_API_KEY_INLINE` | Inline proxy | ✅ | — | CalypsoAI API key for inline proxy mode |
 | `F5_GUARDRAIL_BASE_URL` | Both | ❌ | `https://us1.calypsoai.app` | API base URL |
 | `F5_GUARDRAIL_PROVIDER_OPENAI` | Inline | ✅* | — | Provider name for proxy route |
 

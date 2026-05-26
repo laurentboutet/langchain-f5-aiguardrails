@@ -40,6 +40,20 @@ class TestBuildOpenAIProxyUrl:
         assert "/openai/prov" in url
 
 
+class TestEnvVarNames:
+    """Tests that environment variable names are correct."""
+
+    def test_api_key_env_var_is_inline(self) -> None:
+        """API key env var for inline proxy is F5_GUARDRAIL_API_KEY_INLINE."""
+        assert _ENV_API_KEY == "F5_GUARDRAIL_API_KEY_INLINE"
+
+    def test_base_url_env_var(self) -> None:
+        assert _ENV_BASE_URL == "F5_GUARDRAIL_BASE_URL"
+
+    def test_provider_env_var(self) -> None:
+        assert _ENV_PROVIDER_OPENAI == "F5_GUARDRAIL_PROVIDER_OPENAI"
+
+
 class TestChatF5OpenAI:
     """Tests for the ChatF5OpenAI class."""
 

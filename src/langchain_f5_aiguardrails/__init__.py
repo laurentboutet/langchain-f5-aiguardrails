@@ -8,7 +8,8 @@ Quick start (middleware mode — separate scan API calls)::
     from langchain_f5_aiguardrails import F5GuardrailMiddleware
 
     middleware = F5GuardrailMiddleware(
-        api_key="my-key",
+        api_key_request="key-for-request-project",
+        api_key_response="key-for-response-project",
         mode="enforce",
     )
 

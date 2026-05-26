@@ -36,7 +36,9 @@ cp .env.example .env
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `F5_GUARDRAIL_API_KEY` | Your F5 AI Guardrails API key | `cai_xxxxxxxxxxxx` |
+| `F5_GUARDRAIL_API_KEY_REQUEST` | API key for request/prompt scanning | `cai_xxxxxxxxxxxx` |
+| `F5_GUARDRAIL_API_KEY_RESPONSE` | API key for response scanning | `cai_xxxxxxxxxxxx` |
+| `F5_GUARDRAIL_API_KEY_INLINE` | API key for inline proxy mode | `cai_xxxxxxxxxxxx` |
 | `F5_GUARDRAIL_BASE_URL` | Base URL for your F5 instance | `https://us1.calypsoai.app` |
 
 **Optional variables:**
@@ -51,17 +53,23 @@ cp .env.example .env
 You can set them in a `.env` file (auto-loaded by examples using `python-dotenv`) or export them in your shell:
 
 ```bash
-# Windows (cmd)
-set F5_GUARDRAIL_API_KEY=your-api-key-here
+# Windows (cmd) — middleware mode
+set F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
+set F5_GUARDRAIL_API_KEY_RESPONSE=your-response-api-key
 set F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
 
-# Windows (PowerShell)
-$env:F5_GUARDRAIL_API_KEY = "your-api-key-here"
+# Windows (PowerShell) — middleware mode
+$env:F5_GUARDRAIL_API_KEY_REQUEST = "your-request-api-key"
+$env:F5_GUARDRAIL_API_KEY_RESPONSE = "your-response-api-key"
 $env:F5_GUARDRAIL_BASE_URL = "https://us1.calypsoai.app"
 
-# macOS/Linux
-export F5_GUARDRAIL_API_KEY=your-api-key-here
+# macOS/Linux — middleware mode
+export F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
+export F5_GUARDRAIL_API_KEY_RESPONSE=your-response-api-key
 export F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
+
+# For inline proxy mode (examples 07-08), also set:
+# F5_GUARDRAIL_API_KEY_INLINE=your-inline-api-key
 ```
 
 ---
@@ -310,8 +318,10 @@ The middleware will automatically scan prompts via `before_model` and responses 
 
 ## Troubleshooting
 
-### `KeyError: 'F5_GUARDRAIL_API_KEY'`
-You haven't set the API key. Set it via environment variable or `.env` file.
+### `KeyError: 'F5_GUARDRAIL_API_KEY_REQUEST'`
+You haven't set the API key(s). Set them via environment variables or `.env` file.
+Middleware mode requires both `F5_GUARDRAIL_API_KEY_REQUEST` and `F5_GUARDRAIL_API_KEY_RESPONSE`.
+Inline proxy mode requires `F5_GUARDRAIL_API_KEY_INLINE`.
 
 ### `F5GuardrailAuthError: HTTP 401`
 Your API key is invalid or expired. Check the key value and ensure it has permissions for the scan API.

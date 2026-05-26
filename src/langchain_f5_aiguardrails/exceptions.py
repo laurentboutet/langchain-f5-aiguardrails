@@ -28,7 +28,7 @@ class F5GuardrailAPIError(F5GuardrailError):
 class F5GuardrailAuthError(F5GuardrailError):
     """Raised on HTTP 401 or 403 — the API key is invalid or lacks permissions."""
 
-    def __init__(self, message: str = "Authentication failed: check your F5_GUARDRAIL_API_KEY.") -> None:
+    def __init__(self, message: str = "Authentication failed: check your F5 AI Guardrails API key.") -> None:
         super().__init__(message)
 
 

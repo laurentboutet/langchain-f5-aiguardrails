@@ -3,6 +3,10 @@
 Provides :class:`F5GuardrailMiddleware` — an ``AgentMiddleware`` subclass
 that scans prompts before model calls and responses after model calls,
 blocking or logging unsafe content based on the configured enforcement mode.
+
+The middleware uses **separate API keys** for request and response scanning,
+allowing different CalypsoAI projects (with distinct rule sets) for each
+direction.
 """
 
 from __future__ import annotations
@@ -39,7 +43,9 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
     """LangChain agent middleware for F5 AI Guardrails.
 
     Scans prompts (user inputs) before they reach the LLM and responses
-    (LLM outputs) before they reach the user. Supports three modes:
+    (LLM outputs) before they reach the user. Uses **separate API keys**
+    for request and response scanning, allowing different CalypsoAI projects
+    (with distinct rule sets) for each direction. Supports three modes:
 
     - **enforce** — Block unsafe content; agent jumps to end with a blocked message.
     - **monitor** — Log violations and invoke callbacks, but never block.
@@ -51,7 +57,8 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
         from langchain_f5_aiguardrails import F5GuardrailMiddleware
 
         middleware = F5GuardrailMiddleware(
-            api_key="my-key",
+            api_key_request="key-for-request-project",
+            api_key_response="key-for-response-project",
             base_url="https://us1.calypsoai.app",
             mode="enforce",
         )
@@ -65,6 +72,13 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
     The middleware can also be loaded from environment variables::
 
         middleware = F5GuardrailMiddleware.from_env()
+
+    Environment variables::
+
+        F5_GUARDRAIL_API_KEY_REQUEST=key-for-request-project
+        F5_GUARDRAIL_API_KEY_RESPONSE=key-for-response-project
+        F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
+        F5_GUARDRAIL_MODE=enforce
     """
 
     # AgentMiddleware protocol attributes
@@ -76,7 +90,8 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
 
     def __init__(
         self,
-        api_key: str,
+        api_key_request: str,
+        api_key_response: str,
         base_url: str = "https://us1.calypsoai.app",
         *,
         mode: str = "enforce",
@@ -90,7 +105,8 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
         """Initialize the middleware.
 
         Args:
-            api_key: F5 AI Guardrails API key.
+            api_key_request: F5 AI Guardrails API key for request/prompt scanning.
+            api_key_response: F5 AI Guardrails API key for response scanning.
             base_url: Base URL for the F5 scan API.
             mode: Enforcement mode — "enforce", "monitor", or "off".
             fail_open: Allow requests when the scan API is unreachable.
@@ -101,7 +117,8 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
             blocked_message: Message returned when content is blocked.
         """
         self._config = GuardrailConfig(
-            api_key=api_key,
+            api_key_request=api_key_request,
+            api_key_response=api_key_response,
             base_url=base_url,
             project=project,
             mode=mode,  # type: ignore[arg-type]
@@ -110,12 +127,32 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
             verbose=verbose,
             blocked_message=blocked_message,
         )
-        self._client = F5GuardrailClient.from_config(self._config)
+        # Create separate clients for request and response scanning.
+        # Each client uses its own API key, which maps to a distinct
+        # CalypsoAI project with its own set of guardrail rules.
+        self._request_client = F5GuardrailClient(
+            api_key=api_key_request,
+            base_url=base_url,
+            project=project,
+            timeout=timeout,
+        )
+        self._response_client = F5GuardrailClient(
+            api_key=api_key_response,
+            base_url=base_url,
+            project=project,
+            timeout=timeout,
+        )
         self._on_violation = on_violation
 
     # ------------------------------------------------------------------
     # Internal scanning logic
     # ------------------------------------------------------------------
+
+    def _get_client(self, direction: ScanDirection) -> F5GuardrailClient:
+        """Return the appropriate client based on scan direction."""
+        if direction == ScanDirection.PROMPT:
+            return self._request_client
+        return self._response_client
 
     def _scan_content(self, content: str, direction: ScanDirection) -> ScanResponse | None:
         """Scan content synchronously, handling errors per fail_open policy."""
@@ -129,7 +166,8 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
         )
 
         try:
-            return self._client.scan(request)
+            client = self._get_client(direction)
+            return client.scan(request)
         except F5GuardrailError as exc:
             logger.warning(
                 "Scan API error during %s scan: %s (fail_open=%s)",
@@ -153,7 +191,8 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
         )
 
         try:
-            return await self._client.scan_async(request)
+            client = self._get_client(direction)
+            return await client.scan_async(request)
         except F5GuardrailError as exc:
             logger.warning(
                 "Scan API error during %s scan: %s (fail_open=%s)",
@@ -333,12 +372,14 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
     # ------------------------------------------------------------------
 
     def close(self) -> None:
-        """Close the underlying HTTP client and release connections."""
-        self._client.close()
+        """Close the underlying HTTP clients and release connections."""
+        self._request_client.close()
+        self._response_client.close()
 
     async def close_async(self) -> None:
-        """Close the underlying async HTTP client and release connections."""
-        await self._client.close_async()
+        """Close the underlying async HTTP clients and release connections."""
+        await self._request_client.close_async()
+        await self._response_client.close_async()
 
     # ------------------------------------------------------------------
     # Factory
@@ -350,10 +391,16 @@ class F5GuardrailMiddleware(_AgentMiddlewareBase):  # type: ignore[type-arg]
         *,
         on_violation: Callable[[ScanResponse, ScanDirection], None] | None = None,
     ) -> F5GuardrailMiddleware:
-        """Create middleware from ``F5_GUARDRAIL_*`` environment variables."""
+        """Create middleware from ``F5_GUARDRAIL_*`` environment variables.
+
+        Required:
+            - ``F5_GUARDRAIL_API_KEY_REQUEST``
+            - ``F5_GUARDRAIL_API_KEY_RESPONSE``
+        """
         config = GuardrailConfig.from_env()
         return cls(
-            api_key=config.api_key,
+            api_key_request=config.api_key_request,
+            api_key_response=config.api_key_response,
             base_url=config.base_url,
             mode=config.mode,
             fail_open=config.fail_open,

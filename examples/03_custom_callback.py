@@ -5,7 +5,8 @@ Shows how to use the on_violation callback to collect metrics,
 send alerts, or write to an audit log when violations are detected.
 
 Usage:
-    export F5_GUARDRAIL_API_KEY=your-api-key
+    export F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
+    export F5_GUARDRAIL_API_KEY_RESPONSE=your-response-api-key
     python examples/03_custom_callback.py
 """
 
@@ -81,7 +82,8 @@ def main() -> None:
         audit_log_callback(response, direction)
 
     middleware = F5GuardrailMiddleware(
-        api_key=os.environ["F5_GUARDRAIL_API_KEY"],
+        api_key_request=os.environ["F5_GUARDRAIL_API_KEY_REQUEST"],
+        api_key_response=os.environ["F5_GUARDRAIL_API_KEY_RESPONSE"],
         base_url=os.environ.get("F5_GUARDRAIL_BASE_URL", "https://us1.calypsoai.app"),
         mode="enforce",
         on_violation=combined_callback,

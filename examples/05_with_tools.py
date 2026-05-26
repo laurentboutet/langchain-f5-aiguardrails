@@ -8,7 +8,8 @@ the agent can call tools normally.
 Requirements:
     pip install langchain-f5-aiguardrails langchain-openai python-dotenv
 
-    export F5_GUARDRAIL_API_KEY=your-f5-api-key
+    export F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
+    export F5_GUARDRAIL_API_KEY_RESPONSE=your-response-api-key
     export OPENAI_API_KEY=your-openai-api-key
 
 Usage:
@@ -34,7 +35,8 @@ def violation_alert(response: ScanResponse, direction: ScanDirection) -> None:
 
 def main() -> None:
     middleware = F5GuardrailMiddleware(
-        api_key=os.environ["F5_GUARDRAIL_API_KEY"],
+        api_key_request=os.environ["F5_GUARDRAIL_API_KEY_REQUEST"],
+        api_key_response=os.environ["F5_GUARDRAIL_API_KEY_RESPONSE"],
         base_url=os.environ.get("F5_GUARDRAIL_BASE_URL", "https://us1.calypsoai.app"),
         mode="enforce",
         on_violation=violation_alert,

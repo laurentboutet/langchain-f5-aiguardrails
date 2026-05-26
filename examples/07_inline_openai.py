@@ -12,7 +12,7 @@ The F5 proxy:
 
 Required environment variables::
 
-    F5_GUARDRAIL_API_KEY=your-calypsoai-token
+    F5_GUARDRAIL_API_KEY_INLINE=your-calypsoai-token
     F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
     F5_GUARDRAIL_PROVIDER_OPENAI=your-provider-name
 

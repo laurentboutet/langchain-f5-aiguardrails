@@ -6,7 +6,8 @@ Violations are logged and the optional on_violation callback is invoked.
 Use this mode for shadow deployment and observability before enforcing.
 
 Usage:
-    export F5_GUARDRAIL_API_KEY=your-api-key
+    export F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
+    export F5_GUARDRAIL_API_KEY_RESPONSE=your-response-api-key
     python examples/02_monitor_mode.py
 """
 
@@ -34,7 +35,8 @@ def log_violation(response: ScanResponse, direction: ScanDirection) -> None:
 
 def main() -> None:
     middleware = F5GuardrailMiddleware(
-        api_key=os.environ["F5_GUARDRAIL_API_KEY"],
+        api_key_request=os.environ["F5_GUARDRAIL_API_KEY_REQUEST"],
+        api_key_response=os.environ["F5_GUARDRAIL_API_KEY_RESPONSE"],
         base_url=os.environ.get("F5_GUARDRAIL_BASE_URL", "https://us1.calypsoai.app"),
         mode="monitor",           # Log only, never block
         on_violation=log_violation,  # Callback for violations

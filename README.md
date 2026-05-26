@@ -57,7 +57,7 @@ print(response.content)
 Required environment variables for inline proxy:
 
 ```bash
-export F5_GUARDRAIL_API_KEY=your-calypsoai-token
+export F5_GUARDRAIL_API_KEY_INLINE=your-calypsoai-token
 export F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
 export F5_GUARDRAIL_PROVIDER_OPENAI=your-provider-name
 ```
@@ -70,7 +70,8 @@ Intercepts LLM calls with separate before/after scan API calls.
 from langchain_f5_aiguardrails import F5GuardrailMiddleware
 
 middleware = F5GuardrailMiddleware(
-    api_key="your-f5-api-key",
+    api_key_request="key-for-request-project",
+    api_key_response="key-for-response-project",
     base_url="https://us1.calypsoai.app",
     mode="enforce",
 )
@@ -118,12 +119,16 @@ Response returned to user
 
 ### Middleware Mode
 
+Uses **separate API keys** for request and response scanning, allowing different
+CalypsoAI projects (with distinct rule sets) for each direction:
+
 ```
 User message
     |
     v
 +--------------------------------------------+
 |  before_model hook                         |
+|  -> request client (API_KEY_REQUEST)       |
 |  -> F5GuardrailClient.scan(prompt)         |
 |  -> if blocked and mode="enforce": block   |
 +--------------------------------------------+
@@ -134,6 +139,7 @@ User message
     v
 +--------------------------------------------+
 |  after_model hook                          |
+|  -> response client (API_KEY_RESPONSE)     |
 |  -> F5GuardrailClient.scan(response)       |
 |  -> if blocked and mode="enforce": block   |
 +--------------------------------------------+
@@ -168,7 +174,8 @@ llm_executor = ChatF5OpenAI.from_env(session_manager=session, model="gpt-4o-mini
 
 ```python
 middleware = F5GuardrailMiddleware(
-    api_key="your-api-key",
+    api_key_request="key-for-request-project",
+    api_key_response="key-for-response-project",
     base_url="https://us1.calypsoai.app",
     mode="enforce",       # "enforce" | "monitor" | "off"
     fail_open=True,       # allow on API errors
@@ -183,7 +190,9 @@ middleware = F5GuardrailMiddleware(
 ### Environment Variables
 
 ```bash
-export F5_GUARDRAIL_API_KEY=your-api-key
+# Middleware mode — separate API keys for request and response scanning
+export F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
+export F5_GUARDRAIL_API_KEY_RESPONSE=your-response-api-key
 export F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
 export F5_GUARDRAIL_MODE=enforce
 export F5_GUARDRAIL_FAIL_OPEN=true
@@ -197,9 +206,12 @@ middleware = F5GuardrailMiddleware.from_env()
 
 ## Parameters
 
+### Middleware Mode (`F5GuardrailMiddleware`)
+
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `api_key` | `str` | required | F5 AI Guardrails API key |
+| `api_key_request` | `str` | required | API key for request/prompt scanning |
+| `api_key_response` | `str` | required | API key for response scanning |
 | `base_url` | `str` | `https://us1.calypsoai.app` | API base URL |
 | `mode` | `str` | `enforce` | `enforce`, `monitor`, or `off` |
 | `fail_open` | `bool` | `True` | Allow on API errors |
@@ -208,6 +220,20 @@ middleware = F5GuardrailMiddleware.from_env()
 | `verbose` | `bool` | `False` | Verbose scanner results |
 | `on_violation` | `callable` | `None` | `(ScanResponse, ScanDirection) -> None` |
 | `blocked_message` | `str` | *(default)* | Message on blocked content |
+
+### Environment Variables
+
+| Variable | Mode | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `F5_GUARDRAIL_API_KEY_REQUEST` | Middleware | ✅ | — | API key for request/prompt scanning |
+| `F5_GUARDRAIL_API_KEY_RESPONSE` | Middleware | ✅ | — | API key for response scanning |
+| `F5_GUARDRAIL_API_KEY_INLINE` | Inline | ✅ | — | API key for inline proxy mode |
+| `F5_GUARDRAIL_BASE_URL` | Both | ❌ | `https://us1.calypsoai.app` | API base URL |
+| `F5_GUARDRAIL_PROVIDER_OPENAI` | Inline | ✅ | — | CalypsoAI provider slug |
+| `F5_GUARDRAIL_MODE` | Middleware | ❌ | `enforce` | Enforcement mode |
+| `F5_GUARDRAIL_FAIL_OPEN` | Middleware | ❌ | `true` | Allow on API errors |
+| `F5_GUARDRAIL_TIMEOUT` | Middleware | ❌ | `30` | HTTP timeout (seconds) |
+| `F5_GUARDRAIL_PROJECT` | Middleware | ❌ | — | Default project ID |
 
 ## Enforcement Modes
 
@@ -227,7 +253,10 @@ def my_callback(response: ScanResponse, direction: ScanDirection) -> None:
     # Send to metrics, alerting, audit log, etc.
 
 middleware = F5GuardrailMiddleware(
-    api_key="key", mode="monitor", on_violation=my_callback,
+    api_key_request="key-for-request",
+    api_key_response="key-for-response",
+    mode="monitor",
+    on_violation=my_callback,
 )
 ```
 

@@ -319,7 +319,8 @@ Built-in logging and extensible callbacks:
 
 ```python
 middleware = F5GuardrailMiddleware(
-    api_key="...",
+    api_key_request="...",
+    api_key_response="...",
     base_url="https://us1.calypsoai.app",
     mode="enforce",
     on_violation=lambda result, direction: 

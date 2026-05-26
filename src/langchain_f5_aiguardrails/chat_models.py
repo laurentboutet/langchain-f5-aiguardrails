@@ -39,7 +39,7 @@ except ImportError:
     _ChatOpenAIBase = None  # type: ignore[assignment,misc]
 
 # Default environment variable names (consistent with existing package).
-_ENV_API_KEY = "F5_GUARDRAIL_API_KEY"
+_ENV_API_KEY = "F5_GUARDRAIL_API_KEY_INLINE"
 _ENV_BASE_URL = "F5_GUARDRAIL_BASE_URL"
 _ENV_PROVIDER_OPENAI = "F5_GUARDRAIL_PROVIDER_OPENAI"
 _DEFAULT_BASE_URL = "https://us1.calypsoai.app"
@@ -76,7 +76,7 @@ class ChatF5OpenAI:
     2. Injects the ``x-cai-metadata-session-id`` header on every request
        so CalypsoAI can build Agentic Fingerprints — a unified swimlane
        view of all agent calls within a workflow.
-    3. Uses ``F5_GUARDRAIL_API_KEY`` as the Bearer token for authentication.
+    3. Uses ``F5_GUARDRAIL_API_KEY_INLINE`` as the Bearer token for authentication.
 
     All standard ``ChatOpenAI`` parameters (``model``, ``temperature``,
     ``max_tokens``, etc.) are passed through to the underlying class.
@@ -87,8 +87,8 @@ class ChatF5OpenAI:
         f5_base_url: F5 AI Guardrails base URL.
             Can also be set via ``F5_GUARDRAIL_BASE_URL`` env var.
             Defaults to ``https://us1.calypsoai.app``.
-        f5_api_key: F5 AI Guardrails API key.
-            Can also be set via ``F5_GUARDRAIL_API_KEY`` env var.
+        f5_api_key: F5 AI Guardrails API key for inline proxy mode.
+            Can also be set via ``F5_GUARDRAIL_API_KEY_INLINE`` env var.
         session_manager: Optional :class:`F5SessionManager` for session tracking.
             When provided, the session ID header is injected into every call.
         **kwargs: All other keyword arguments are passed to ``ChatOpenAI``.
@@ -112,7 +112,7 @@ class ChatF5OpenAI:
 
     Environment variables::
 
-        F5_GUARDRAIL_API_KEY=your-token
+        F5_GUARDRAIL_API_KEY_INLINE=your-token
         F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
         F5_GUARDRAIL_PROVIDER_OPENAI=openai-gpt4
 
@@ -198,7 +198,7 @@ class ChatF5OpenAI:
         """Create a ChatF5OpenAI from ``F5_GUARDRAIL_*`` environment variables.
 
         Required environment variables:
-            - ``F5_GUARDRAIL_API_KEY``
+            - ``F5_GUARDRAIL_API_KEY_INLINE``
             - ``F5_GUARDRAIL_PROVIDER_OPENAI``
 
         Optional:

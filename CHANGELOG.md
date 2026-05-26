@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-05-26
+
+### ⚠️ BREAKING CHANGES
+
+This release introduces **separate API keys** for request and response scanning in middleware mode, enabling different CalypsoAI projects (with distinct rule sets) for each scan direction.
+
+- **Middleware mode** now requires **two API keys**:
+  - `F5_GUARDRAIL_API_KEY_REQUEST` — for request/prompt scanning
+  - `F5_GUARDRAIL_API_KEY_RESPONSE` — for response scanning
+  - The old `F5_GUARDRAIL_API_KEY` is no longer used in middleware mode
+  - If you want a single project for both directions, set both keys to the same value
+
+- **Inline proxy mode** API key renamed:
+  - `F5_GUARDRAIL_API_KEY` → `F5_GUARDRAIL_API_KEY_INLINE`
+
+- **`F5GuardrailMiddleware` constructor changed**:
+  - Old: `F5GuardrailMiddleware(api_key="key", ...)`
+  - New: `F5GuardrailMiddleware(api_key_request="key1", api_key_response="key2", ...)`
+
+- **`GuardrailConfig` fields changed**:
+  - Old: `api_key` (single field)
+  - New: `api_key_request` + `api_key_response` (two fields)
+
+### Migration Guide
+
+**Middleware mode:**
+```python
+# Before (v0.3.0)
+middleware = F5GuardrailMiddleware(api_key="my-key", ...)
+
+# After (v0.4.0)
+middleware = F5GuardrailMiddleware(
+    api_key_request="my-key",  # same key for both if single project
+    api_key_response="my-key",
+    ...
+)
+```
+
+**Environment variables:**
+```bash
+# Before (v0.3.0)
+F5_GUARDRAIL_API_KEY=my-key
+
+# After (v0.4.0) — middleware mode
+F5_GUARDRAIL_API_KEY_REQUEST=my-request-key
+F5_GUARDRAIL_API_KEY_RESPONSE=my-response-key
+
+# After (v0.4.0) — inline proxy mode
+F5_GUARDRAIL_API_KEY_INLINE=my-inline-key
+```
+
+### Changed
+- `F5GuardrailMiddleware` now creates two separate `F5GuardrailClient` instances — one for request scanning, one for response scanning
+- `GuardrailConfig.from_env()` reads `F5_GUARDRAIL_API_KEY_REQUEST` and `F5_GUARDRAIL_API_KEY_RESPONSE`
+- `ChatF5OpenAI` reads `F5_GUARDRAIL_API_KEY_INLINE` instead of `F5_GUARDRAIL_API_KEY`
+- Updated all documentation, examples, and tests
+
 ## [0.3.0] - 2025-05-21
 
 ### Added

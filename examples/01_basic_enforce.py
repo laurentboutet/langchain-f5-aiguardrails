@@ -8,7 +8,8 @@ Requirements:
     pip install langchain-f5-aiguardrails langchain-openai
 
     # Set environment variables in .env or shell:
-    F5_GUARDRAIL_API_KEY=your-f5-api-key
+    F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
+    F5_GUARDRAIL_API_KEY_RESPONSE=your-response-api-key
     OPENAI_API_KEY=your-openai-api-key  (only for Option A)
     F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
 """
@@ -28,7 +29,8 @@ from langchain_f5_aiguardrails import F5GuardrailMiddleware
 def main() -> None:
     # Create middleware in enforce mode
     middleware = F5GuardrailMiddleware(
-        api_key=os.environ["F5_GUARDRAIL_API_KEY"],
+        api_key_request=os.environ["F5_GUARDRAIL_API_KEY_REQUEST"],
+        api_key_response=os.environ["F5_GUARDRAIL_API_KEY_RESPONSE"],
         base_url=os.environ.get("F5_GUARDRAIL_BASE_URL", "https://us1.calypsoai.app"),
         mode="enforce",        # Block unsafe content
         fail_open=True,        # Allow if scan API is unreachable

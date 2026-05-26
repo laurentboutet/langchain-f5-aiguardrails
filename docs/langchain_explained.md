@@ -366,7 +366,7 @@ from langchain.agents import create_agent
 agent = create_agent(
     model="openai:gpt-4.1",
     tools=[...],
-    middleware=[SecurityMiddleware(api_key="...", mode="enforce")],
+    middleware=[SecurityMiddleware(api_key_request="...", api_key_response="...", mode="enforce")],
 )
 ```
 
@@ -490,7 +490,8 @@ agent = create_agent(
     tools=[search_tool, calculator_tool],
     middleware=[
         F5GuardrailMiddleware(
-            api_key="your-api-key",
+            api_key_request="your-request-api-key",
+            api_key_response="your-response-api-key",
             base_url="https://us1.calypsoai.app",
             mode="enforce",
         ),

@@ -6,7 +6,8 @@ environment variables using the from_env() factory methods.
 
 Usage:
     # Set all config via environment:
-    export F5_GUARDRAIL_API_KEY=your-api-key
+    export F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
+    export F5_GUARDRAIL_API_KEY_RESPONSE=your-response-api-key
     export F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
     export F5_GUARDRAIL_MODE=enforce
     export F5_GUARDRAIL_FAIL_OPEN=true
@@ -55,7 +56,8 @@ def main() -> None:
 
     config = GuardrailConfig.from_env()
     print(f"  ✅ Config loaded from environment")
-    print(f"     api_key:   {'*' * (len(config.api_key) - 4) + config.api_key[-4:]}")
+    print(f"     api_key_request:  {'*' * (len(config.api_key_request) - 4) + config.api_key_request[-4:]}")
+    print(f"     api_key_response: {'*' * (len(config.api_key_response) - 4) + config.api_key_response[-4:]}")
     print(f"     base_url:  {config.base_url}")
     print(f"     mode:      {config.mode}")
 

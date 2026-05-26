@@ -69,7 +69,8 @@ class ScanResponse(BaseModel):
 ### `GuardrailConfig`
 ```python
 class GuardrailConfig(BaseModel):
-    api_key: str                                 # F5 AI Guardrails API key
+    api_key_request: str                         # F5 AI Guardrails API key for request scanning
+    api_key_response: str                        # F5 AI Guardrails API key for response scanning
     base_url: str = "https://us1.calypsoai.app"  # Base URL for the API
     project: str | None = None                   # Default project for scans
     mode: Literal["enforce", "monitor", "off"] = "enforce"
@@ -135,7 +136,7 @@ All source files for the package, tests, examples, and configuration.
 All public and key internal functions for the package.
 
 ### `F5GuardrailClient` — `client.py`
-- `__init__(self, api_key: str, base_url: str, project: str | None, timeout: int)` — Initialize client with config
+- `__init__(self, api_key: str, base_url: str, project: str | None, timeout: int)` — Initialize client with config (single key per client instance)
 - `scan(self, request: ScanRequest) -> ScanResponse` — Synchronous scan call
 - `scan_async(self, request: ScanRequest) -> ScanResponse` — Async scan call
 - `_build_payload(self, request: ScanRequest) -> dict` — Convert ScanRequest to API JSON payload
@@ -146,7 +147,7 @@ All public and key internal functions for the package.
 - `from_env(cls) -> F5GuardrailClient` — Class method: create from environment variables
 
 ### `F5GuardrailMiddleware` — `middleware.py`
-- `__init__(self, api_key: str, base_url: str, mode: str, fail_open: bool, timeout: int, project: str | None, verbose: bool, on_violation: Callable | None, blocked_message: str)` — Initialize middleware
+- `__init__(self, api_key_request: str, api_key_response: str, base_url: str, mode: str, fail_open: bool, timeout: int, project: str | None, verbose: bool, on_violation: Callable | None, blocked_message: str)` — Initialize middleware with separate API keys for request/response scanning
 - `before_model(self, state: AgentState, runtime: Runtime) -> dict | None` — Scan prompt, block if violation in enforce mode
 - `after_model(self, state: AgentState, runtime: Runtime) -> dict | None` — Scan response, block if violation in enforce mode
 - `abefore_model(self, state: AgentState, runtime: Runtime) -> dict | None` — Async variant of before_model
@@ -182,7 +183,7 @@ All classes for the package.
 **`GuardrailConfig`** — `src/langchain_f5_aiguardrails/config.py`
 - Inherits: `pydantic.BaseModel`
 - Key methods: `from_env`
-- Fields: api_key, base_url, project, mode, fail_open, timeout, verbose, blocked_message
+- Fields: api_key_request, api_key_response, base_url, project, mode, fail_open, timeout, verbose, blocked_message
 
 **`ScanRequest`** — `src/langchain_f5_aiguardrails/types.py`
 - Inherits: `pydantic.BaseModel`
@@ -247,13 +248,15 @@ Comprehensive test suite using pytest with async support and HTTP mocking.
 
 ### `tests/conftest.py` — Shared Fixtures
 - `api_base_url` — returns `"https://us1.calypsoai.app"`
-- `mock_api_key` — returns `"test-api-key-12345"`
+- `MOCK_API_KEY` — `"test-api-key-12345"` (for single-client tests)
+- `MOCK_API_KEY_REQUEST` — `"test-request-api-key"` (for middleware request scanning)
+- `MOCK_API_KEY_RESPONSE` — `"test-response-api-key"` (for middleware response scanning)
 - `cleared_response_json` — JSON for a cleared scan response
 - `blocked_response_json` — JSON for a blocked scan response
 - `flagged_response_json` — JSON for a flagged scan response
-- `guardrail_client(api_base_url, mock_api_key)` — configured F5GuardrailClient
-- `middleware_enforce(mock_api_key, api_base_url)` — middleware in enforce mode
-- `middleware_monitor(mock_api_key, api_base_url)` — middleware in monitor mode
+- `guardrail_client()` — configured F5GuardrailClient (single key)
+- `middleware_enforce()` — middleware in enforce mode (dual keys: request + response)
+- `middleware_monitor()` — middleware in monitor mode (dual keys: request + response)
 
 ### `tests/test_types.py` — Model Validation
 - `test_scan_request_minimal` — only `input` field required

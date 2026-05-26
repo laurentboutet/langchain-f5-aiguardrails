@@ -207,17 +207,40 @@ class F5GuardrailClient:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_config(cls, config: GuardrailConfig) -> F5GuardrailClient:
-        """Create a client from a :class:`GuardrailConfig` instance."""
+    def from_config(
+        cls,
+        config: GuardrailConfig,
+        *,
+        direction: str = "request",
+    ) -> F5GuardrailClient:
+        """Create a client from a :class:`GuardrailConfig` instance.
+
+        Args:
+            config: The validated configuration.
+            direction: Which API key to use — ``"request"`` or ``"response"``.
+                Defaults to ``"request"``.
+
+        Returns:
+            A configured :class:`F5GuardrailClient`.
+        """
+        if direction == "response":
+            api_key = config.api_key_response
+        else:
+            api_key = config.api_key_request
         return cls(
-            api_key=config.api_key,
+            api_key=api_key,
             base_url=config.base_url,
             project=config.project,
             timeout=config.timeout,
         )
 
     @classmethod
-    def from_env(cls) -> F5GuardrailClient:
-        """Create a client from ``F5_GUARDRAIL_*`` environment variables."""
+    def from_env(cls, *, direction: str = "request") -> F5GuardrailClient:
+        """Create a client from ``F5_GUARDRAIL_*`` environment variables.
+
+        Args:
+            direction: Which API key to use — ``"request"`` or ``"response"``.
+                Defaults to ``"request"``.
+        """
         config = GuardrailConfig.from_env()
-        return cls.from_config(config)
+        return cls.from_config(config, direction=direction)

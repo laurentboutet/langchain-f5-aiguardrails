@@ -7,7 +7,7 @@ your API key, base URL, and project configuration.
 
 Usage:
     # Set environment variables first:
-    export F5_GUARDRAIL_API_KEY=your-api-key
+    export F5_GUARDRAIL_API_KEY_REQUEST=your-request-api-key
     export F5_GUARDRAIL_BASE_URL=https://us1.calypsoai.app
     export F5_GUARDRAIL_PROJECT=my-project  # optional
 
@@ -172,7 +172,7 @@ def run_tests(client: F5GuardrailClient, project: str | None = None) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Manual F5 AI Guardrails scan test")
-    parser.add_argument("--api-key", default=os.environ.get("F5_GUARDRAIL_API_KEY"), help="API key")
+    parser.add_argument("--api-key", default=os.environ.get("F5_GUARDRAIL_API_KEY_REQUEST"), help="API key")
     parser.add_argument("--base-url", default=os.environ.get("F5_GUARDRAIL_BASE_URL", "https://us1.calypsoai.app"), help="Base URL")
     parser.add_argument("--project", default=os.environ.get("F5_GUARDRAIL_PROJECT"), help="Project ID")
     parser.add_argument("--timeout", type=int, default=30, help="Timeout in seconds")
@@ -180,7 +180,7 @@ def main() -> None:
 
     if not args.api_key:
         print("❌ Error: API key is required.")
-        print("   Set F5_GUARDRAIL_API_KEY env var or use --api-key flag.")
+        print("   Set F5_GUARDRAIL_API_KEY_REQUEST env var or use --api-key flag.")
         sys.exit(1)
 
     print(f"🔧 Configuration:")
@@ -199,7 +199,7 @@ def main() -> None:
         run_tests(client, project=args.project)
     except F5GuardrailAuthError as e:
         print(f"\n❌ Authentication failed: {e}")
-        print("   Check your F5_GUARDRAIL_API_KEY value.")
+        print("   Check your F5_GUARDRAIL_API_KEY_REQUEST value.")
         sys.exit(1)
     finally:
         client.close()

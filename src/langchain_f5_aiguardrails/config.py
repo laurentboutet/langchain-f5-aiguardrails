@@ -16,10 +16,16 @@ from pydantic import BaseModel, Field, field_validator
 class GuardrailConfig(BaseModel):
     """Validated configuration for the F5 AI Guardrails middleware and client.
 
+    The middleware uses **separate API keys** for request and response scanning,
+    allowing different CalypsoAI projects (with distinct rule sets) for each
+    direction.  Users who want a single project simply set both keys to the
+    same value.
+
     Example::
 
         config = GuardrailConfig(
-            api_key="my-key",
+            api_key_request="key-for-request-project",
+            api_key_response="key-for-response-project",
             base_url="https://us1.calypsoai.app",
             mode="enforce",
         )
@@ -28,7 +34,12 @@ class GuardrailConfig(BaseModel):
         config = GuardrailConfig.from_env()
     """
 
-    api_key: str = Field(..., description="F5 AI Guardrails API key.")
+    api_key_request: str = Field(
+        ..., description="F5 AI Guardrails API key for request/prompt scanning."
+    )
+    api_key_response: str = Field(
+        ..., description="F5 AI Guardrails API key for response scanning."
+    )
     base_url: str = Field(
         default="https://us1.calypsoai.app",
         description="Base URL for the F5 AI Guardrails API.",
@@ -63,7 +74,8 @@ class GuardrailConfig(BaseModel):
         """Create a :class:`GuardrailConfig` from ``F5_GUARDRAIL_*`` environment variables.
 
         Required:
-            - ``F5_GUARDRAIL_API_KEY``
+            - ``F5_GUARDRAIL_API_KEY_REQUEST``
+            - ``F5_GUARDRAIL_API_KEY_RESPONSE``
 
         Optional (with defaults):
             - ``F5_GUARDRAIL_BASE_URL`` (default: ``https://us1.calypsoai.app``)
@@ -73,13 +85,20 @@ class GuardrailConfig(BaseModel):
             - ``F5_GUARDRAIL_TIMEOUT`` (default: ``30``)
 
         Raises:
-            ValueError: If ``F5_GUARDRAIL_API_KEY`` is not set.
+            ValueError: If required API key environment variables are not set.
         """
-        api_key = os.environ.get("F5_GUARDRAIL_API_KEY", "")
-        if not api_key:
+        api_key_request = os.environ.get("F5_GUARDRAIL_API_KEY_REQUEST", "")
+        if not api_key_request:
             raise ValueError(
-                "F5_GUARDRAIL_API_KEY environment variable is required. "
-                "Set it or pass api_key directly to GuardrailConfig()."
+                "F5_GUARDRAIL_API_KEY_REQUEST environment variable is required. "
+                "Set it or pass api_key_request directly to GuardrailConfig()."
+            )
+
+        api_key_response = os.environ.get("F5_GUARDRAIL_API_KEY_RESPONSE", "")
+        if not api_key_response:
+            raise ValueError(
+                "F5_GUARDRAIL_API_KEY_RESPONSE environment variable is required. "
+                "Set it or pass api_key_response directly to GuardrailConfig()."
             )
 
         fail_open_raw = os.environ.get("F5_GUARDRAIL_FAIL_OPEN", "true").lower()
@@ -92,7 +111,8 @@ class GuardrailConfig(BaseModel):
             timeout = 30
 
         return cls(
-            api_key=api_key,
+            api_key_request=api_key_request,
+            api_key_response=api_key_response,
             base_url=os.environ.get("F5_GUARDRAIL_BASE_URL", "https://us1.calypsoai.app"),
             project=os.environ.get("F5_GUARDRAIL_PROJECT"),
             mode=os.environ.get("F5_GUARDRAIL_MODE", "enforce"),  # type: ignore[arg-type]

@@ -12,6 +12,8 @@ from langchain_f5_aiguardrails import F5GuardrailClient, F5GuardrailMiddleware
 
 API_BASE_URL = "https://us1.calypsoai.app"
 MOCK_API_KEY = "test-api-key-12345"
+MOCK_API_KEY_REQUEST = "test-request-api-key"
+MOCK_API_KEY_RESPONSE = "test-response-api-key"
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +118,8 @@ def guardrail_client() -> F5GuardrailClient:
 def middleware_enforce() -> F5GuardrailMiddleware:
     """Middleware in enforce mode."""
     return F5GuardrailMiddleware(
-        api_key=MOCK_API_KEY,
+        api_key_request=MOCK_API_KEY_REQUEST,
+        api_key_response=MOCK_API_KEY_RESPONSE,
         base_url=API_BASE_URL,
         mode="enforce",
         timeout=5,
@@ -127,7 +130,8 @@ def middleware_enforce() -> F5GuardrailMiddleware:
 def middleware_monitor() -> F5GuardrailMiddleware:
     """Middleware in monitor mode."""
     return F5GuardrailMiddleware(
-        api_key=MOCK_API_KEY,
+        api_key_request=MOCK_API_KEY_REQUEST,
+        api_key_response=MOCK_API_KEY_RESPONSE,
         base_url=API_BASE_URL,
         mode="monitor",
         timeout=5,
